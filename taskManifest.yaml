@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: your-app-deployment
+  labels:
+    app: your-app
+spec:
+  replicas: 4  # Четыре пода согласно результатам нагрузочного теста
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1  # Максимальное количество дополнительных подов при обновлении
+      maxUnavailable: 1  # Максимальное количество недоступных подов при обновлении
+  selector:
+    matchLabels:
+      app: your-app
+  template:
+    metadata:
+      labels:
+        app: your-app
+    spec:
+      containers:
+      - name: your-app-container
+        image: your-app-image:latest
+        resources:
+          requests:
+            memory: "128Mi"  # Минимальные требования по памяти
+            cpu: "500m"  # Минимальные требования по CPU для первых запросов
+          limits:
+            memory: "128Mi"  # Максимальные требования по памяти
+            cpu: "1"  # Максимальные требования по CPU для первых запросов
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sleep", "10"]  # Даём время приложению завершить текущие запросы перед выключением
+      tolerations:
+      - key: "zone"
+        operator: "Equal"
+        value: "zone1"  # Taints & Tolerations для мультизональности
+        effect: "NoSchedule"
+      - key: "zone"
+        operator: "Equal"
+        value: "zone2"
+        effect: "NoSchedule"
+      - key: "zone"
+        operator: "Equal"
+        value: "zone3"
+        effect: "NoSchedule"
